@@ -2,6 +2,8 @@
 
 This repo contains the code for post-processing the contribution from SWOT-OMIP project (GH). 
 
+Data directory contains the dataset used in this repo. Additional dataset is the first barolcinic gravity wave  and rossy wave speed which was obtain from "http://passage.phys.ocean.dal.ca/~olivere/
+
 Notebook directory include the follow code:
 * Wavenumber_Spectra_Computation_GlobalBoxes_offforreal: Estimate the SSH spectra (online)
 * plot_cum_onlv5.ipynb: plot figure 2 from article
