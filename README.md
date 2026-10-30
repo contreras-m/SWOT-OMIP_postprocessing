@@ -5,10 +5,12 @@ This repo contains the code for post-processing the contribution from SWOT-OMIP 
 Data directory contains the dataset used in this repo. Additional dataset is the first barolcinic gravity wave  and rossy wave speed which was obtain from "http://passage.phys.ocean.dal.ca/~olivere/
 
 Notebook directory include the follow code:
-* Wavenumber_Spectra_Computation_GlobalBoxes_offforreal: Estimate the SSH spectra (online)
-* plot_cum_onlv5.ipynb: plot figure 2 from article
-* plot_slope_onl_v2+tides.ipynb : plot figure 4 from article
+* Wavenumber_Spectra_Computation_GlobalBoxes: Estimate the SSH spectra (online)
+* plot_cumpsd_ratio-scatter.ipynb.ipynb: plot figure 2 from article
+* plot_slope_onl_v3+tides.ipynb : plot figure 4 from article
 * region_plot_spectr_noonl_AG-Copy1-IMPR.ipynb plot figure 1 from article
+* region_plot_spectr_noonl_AG-Copy1-IMPR.ipynb plot figure S1O from  SI article
+* plot_cumpsd_scatterplt_SI.ipynb plot figure S2  from  SI article
 * save_geojson_boxes_v3.ipynb : define and save boxes position
 
 The functions needed for the notebook are located in the src directory.
