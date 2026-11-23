@@ -111,13 +111,20 @@ class Registry:
         for name, d in (cfg.get("datasets") or {}).items():
             s3 = d.get("s3")
             local = d.get("local")
+            lon_convention = str(d.get("lon_convention", "0_360"))
+            if lon_convention not in ("0_360", "-180_180"):
+                raise ValueError(
+                    f"dataset {name}: lon_convention must be '0_360' or "
+                    f"'-180_180' (quote the value in YAML - unquoted 0_360 "
+                    "parses as the octal integer 240)"
+                )
             self.datasets[name] = DatasetSpec(
                 name=name,
                 spectra_key=d["spectra_key"],
                 privacy=d.get("privacy", "public"),
                 status=d.get("status", "unverified"),
                 ssh_varname=d.get("ssh_varname", "ssh"),
-                lon_convention=d.get("lon_convention", "0_360"),
+                lon_convention=lon_convention,
                 years=tuple(d.get("years") or ()),
                 s3=S3Source(**s3) if s3 else None,
                 local=LocalSource(**local) if local else None,

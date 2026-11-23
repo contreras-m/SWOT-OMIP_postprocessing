@@ -4,7 +4,7 @@ pandas
 xarray
 h5netcdf
 h5py
-pyinterp==2026.11.0
+pyinterp>=2026.11.0
 s3fs
 fsspec
 pyyaml

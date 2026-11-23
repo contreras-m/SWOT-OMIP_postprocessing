@@ -40,7 +40,7 @@ datasets:
     privacy: public
     status: verified
     ssh_varname: ssh
-    lon_convention: 0_360
+    lon_convention: "0_360"
     cycle_calendar: null
     s3:
       endpoint_url: https://s3-ige-ping.osug.fr
@@ -54,7 +54,7 @@ datasets:
     privacy: private
     status: verified
     ssh_varname: adt
-    lon_convention: 0_360
+    lon_convention: "0_360"
     years: [2021, 2022, 2023]
     cycle_calendar: null
     s3:
@@ -69,7 +69,7 @@ datasets:
     privacy: public
     status: unverified
     ssh_varname: ssh
-    lon_convention: 0_360
+    lon_convention: "0_360"
     cycle_calendar: null
     s3:
       endpoint_url: https://minio.dive.edito.eu
@@ -81,7 +81,7 @@ datasets:
     privacy: public
     status: unverified
     ssh_varname: ssh
-    lon_convention: 0_360
+    lon_convention: "0_360"
     cycle_calendar: null
     s3:
       endpoint_url: https://minio.dive.edito.eu
@@ -93,7 +93,7 @@ datasets:
     privacy: public
     status: unverified
     ssh_varname: ssh
-    lon_convention: 0_360
+    lon_convention: "0_360"
     cycle_calendar: null
     s3:
       endpoint_url: https://noc-msm-o.s3-ext.jc.rl.ac.uk
@@ -105,7 +105,7 @@ datasets:
     privacy: public
     status: unverified
     ssh_varname: ssh
-    lon_convention: 0_360
+    lon_convention: "0_360"
     cycle_calendar: null
     s3:
       endpoint_url: https://noc-msm-o.s3-ext.jc.rl.ac.uk
@@ -117,7 +117,7 @@ datasets:
     privacy: public
     status: unverified
     ssh_varname: ssha
-    lon_convention: 0_360
+    lon_convention: "0_360"
     cycle_calendar: null
     s3:
       endpoint_url: https://minio.dive.edito.eu
