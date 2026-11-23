@@ -1,4 +1,5 @@
-"""Cycle calendar: robust replacement for DataPreprocessing_listv2.get_matching_cycles.
+"""Cycle calendar: robust replacement for the production get_matching_cycles
+(now upstreamed to widetrax.DataPreprocessing, widetrax >= 1.2).
 
 Semantics replicate the production notebook: a cycle matches a season window when
 its [start, end] time range overlaps the window. Unlike the production helper, the

@@ -1,29 +1,21 @@
-"""PSD chain: segments -> Welch -> mean, delegating to the repo-vendored
-Spectra implementation (src/Spectra.py, byte-identical compute functions to
-widetrax v1.1.1 Spectra; only plot_psd cosmetics differ).
+"""PSD chain: segments -> Welch -> mean, delegating to widetrax.Spectra.
 
-The vendored module is exposed as the real package submodule
-swotomip_spectra.spectra_impl (symlink to ../Spectra.py) so that
-multiprocessing pickling works under macOS spawn. Set
-SWOTOMIP_SPECTRA_BACKEND=widetrax to import widetrax.Spectra instead
-(requires the full widetrax dependency set).
+widetrax >= 1.2 ships the production compute chain (retrieve_segments /
+calculate_psd / psd_mean_and_freq) upstreamed from this repo via
+IGE-OPERA/widetrax#20 (PRs #22-#24); the formerly vendored src/Spectra.py
+and its spectra_impl symlink have been removed.
 """
 
 from __future__ import annotations
 
-import os
-from typing import Dict, Tuple
-
-from . import spectra_impl
+from typing import Tuple
 
 
 def load_spectra_module():
-    backend = os.environ.get("SWOTOMIP_SPECTRA_BACKEND", "vendored")
-    if backend == "widetrax":
-        from widetrax import Spectra
+    """Return the widetrax Spectra module (import deferred to first use)."""
+    from widetrax import Spectra
 
-        return Spectra
-    return spectra_impl
+    return Spectra
 
 
 def retrieve_segments(datasets: dict, file_type: str = "NetCDF", namevar: str = "ssh") -> dict:
