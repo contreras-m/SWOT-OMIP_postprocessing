@@ -14,3 +14,28 @@ Notebook directory include the follow code:
 * save_geojson_boxes_v3.ipynb : define and save boxes position
 
 The functions needed for the notebook are located in the src directory.
+
+## Repo articulation (SWOT-OMIP ecosystem)
+
+- [IGE-OPERA/swot-omip](https://github.com/IGE-OPERA/swot-omip): public protocol repo — data conventions, dataset metadata, contribution status, and the one-box demo notebook (`_processing/`).
+- **This repo** (`contreras-m/SWOT-OMIP_postprocessing`): paper-specific production — the parameterized spectra pipeline (`src/swotomip_spectra/` + `bin/compute_spectra.py`), the plot notebooks behind the paper figures, box definitions (`data/`), the cycle calendar, and `spectra_manifest.yaml`.
+- [IGE-OPERA/widetrax](https://github.com/IGE-OPERA/widetrax): reusable PSD/interpolation library. This repo vendors the Spectra compute chain (`src/Spectra.py`, compute functions identical to widetrax v1.1.1) and hosts un-merged production deltas (`src/DataPreprocessing_listv2.py`, patched `fill_nan`/`plot_psd`) pending upstreaming.
+- `contreras-m/SWOT_OMIP-processing`: earlier notebook generation, **superseded by this repo**.
+
+## Spectra pipeline (`bin/compute_spectra.py`)
+
+Computes along-track SSH wavenumber spectra per chunk = (dataset x year x global box x season), replicating the production chain (Gauss-Seidel `fill_nan` with the nadir-gap column mask, segments per cross-track pixel column, Welch `fs=0.5`, min segment length 120 pts), and writes JSONs schema-compatible with the existing DIVE store (`project-meom-ige/OMIP/Global/…/Global_box_{box}_{season}_{KEY}.json`).
+
+Datasets, endpoints and output stores are declared in `config/datasets.yaml`. Sources are read from S3 (`--source s3`) or from local mirrors (`--source local --data-root DIR`). Output goes to a local tree by default (`--out-dir spectra_out`); `--push` writes to the ige spectra store (public tier for public datasets, private tier for eINALT100). Chunks whose spectrum already exists at the target store — or in the legacy DIVE store — are skipped (`--force` / `--no-dive-skip` to override). `--dry-run` plans without computing.
+
+```bash
+uv venv .venv --python 3.12
+uv pip install --python .venv -r requirements-pipeline.txt
+
+.venv/bin/python bin/compute_spectra.py --dataset LLC4320 --dry-run
+.venv/bin/python bin/compute_spectra.py --dataset LLC4320 --seasons JFM --boxes 109 --source s3
+.venv/bin/python bin/verify_manifest.py --init
+```
+
+`bin/verify_manifest.py` refreshes `spectra_manifest.yaml` by probing the stores (read-only).
+

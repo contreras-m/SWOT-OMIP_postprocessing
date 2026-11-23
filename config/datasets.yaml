@@ -1,0 +1,125 @@
+# Dataset registry for the wavenumber-spectra pipeline (bin/compute_spectra.py).
+# Endpoints follow the swot-omip protocol dataset YAMLs (IGE-OPERA/swot-omip).
+schema_version: 1
+
+defaults:
+  seasons: [JFM, JAS]
+
+stores:
+  ige_public:
+    uri: s3://ige/public/swot-omip/spectra
+    endpoint_url: https://s3-ige-ping.osug.fr
+    anon: true
+  ige_private:
+    uri: s3://ige/private/swot-omip/spectra
+    endpoint_url: https://s3-ige-ping.osug.fr
+    anon: false
+  dive:
+    endpoint_url: https://minio.dive.edito.eu
+    spectra_prefix: project-meom-ige/OMIP/Global
+    anon: true
+
+regions:
+  global:
+    boxes_file: data/mostly_ocean_boxes_filtered.geojson
+    swath_file: data/KaRIn_2kms_science_geometries.geojson
+
+# seasons are fixed windows on the SWOT reference calendar (2024) matching the
+# production notebook Wavenumber_Spectra_Computation_GlobalBoxes.ipynb:
+season_windows:
+  JFM: [2024-01-01, 2024-03-31]
+  FMA: [2024-02-01, 2024-04-30]
+  AMJ: [2024-04-01, 2024-06-30]
+  JAS: [2024-07-01, 2024-09-30]
+  ASO: [2024-08-01, 2024-10-31]
+  OND: [2024-10-01, 2024-12-31]
+
+datasets:
+  LLC4320:
+    spectra_key: LLC4320
+    privacy: public
+    status: verified
+    ssh_varname: ssh
+    lon_convention: "0_360"
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://s3-ige-ping.osug.fr
+      base: ige/public/swot-omip/LLC4320
+    local:
+      root: LLC4320_part1
+    note: ige-ping mirror covers cycles 008-016 only (full dataset on DIVE)
+
+  eINALT100:
+    spectra_key: GEOMAR
+    privacy: private
+    status: verified
+    ssh_varname: adt
+    lon_convention: "0_360"
+    years: [2021, 2022, 2023]
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://s3-ige-ping.osug.fr
+      base: ige/private/swot-omip/eINALT100/{year}
+    local:
+      root: Geomar/{year}
+    note: SSH variable is named adt (not ssh); contributor filename format
+
+  GLO12V4:
+    spectra_key: GLO12V4
+    privacy: public
+    status: unverified
+    ssh_varname: ssh
+    lon_convention: "0_360"
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://minio.dive.edito.eu
+      base: project-moi-swot-omip/GLO12V4
+    note: endpoint/base used by production notebook; verify before first run
+
+  GLO36V1:
+    spectra_key: GLO36V1
+    privacy: public
+    status: unverified
+    ssh_varname: ssh
+    lon_convention: "0_360"
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://minio.dive.edito.eu
+      base: project-moi-swot-omip/GLO36V1
+    note: verify before first run
+
+  eORCA025:
+    spectra_key: NOC025
+    privacy: public
+    status: unverified
+    ssh_varname: ssh
+    lon_convention: "0_360"
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://noc-msm-o.s3-ext.jc.rl.ac.uk
+      base: npd-eorca12-era5v1-swot-omip
+    note: '[verify] exact subfolder naming on the NOC endpoint before first run'
+
+  eORCA12:
+    spectra_key: NOC12
+    privacy: public
+    status: unverified
+    ssh_varname: ssh
+    lon_convention: "0_360"
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://noc-msm-o.s3-ext.jc.rl.ac.uk
+      base: npd-eorca12-era5v1-swot-omip
+    note: '[verify] exact subfolder naming on the NOC endpoint before first run'
+
+  SWOT_L3:
+    spectra_key: SWOT
+    privacy: public
+    status: unverified
+    ssh_varname: ssha
+    lon_convention: "0_360"
+    cycle_calendar: null
+    s3:
+      endpoint_url: https://minio.dive.edito.eu
+      base: '[verify] project-meom-ige/OMIP/SWOT_L3 raw L3 observations prefix'
+    note: raw SWOT L3 (observations); exact prefix + variable still to be verified
