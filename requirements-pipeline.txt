@@ -1,0 +1,16 @@
+numpy
+scipy
+pandas
+xarray
+h5netcdf
+h5py
+pyinterp==2026.11.0
+s3fs
+fsspec
+pyyaml
+shapely>=2
+geopandas
+watermark
+matplotlib
+netCDF4
+pytest
