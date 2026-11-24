@@ -2,7 +2,15 @@
 
 This repo contains the code for post-processing the contribution from SWOT-OMIP project (GH). 
 
-Data directory contains the dataset used in this repo. Additional dataset is the first barolcinic gravity wave  and rossy wave speed which was obtain from "http://passage.phys.ocean.dal.ca/~olivere/
+Data directory contains the dataset used in this repo. An additional dataset is
+the first-baroclinic gravity- and Rossby-wave speed dataset of Erik Oliver
+(first baroclinic gravity wave speeds computed from CARS2009 temperature and
+salinity following Chelton et al., JPO, 1998; 0.5° grid). Data page:
+https://ecjoliver.weebly.com/rossby-radius.html — direct NetCDF:
+http://passage.phys.ocean.dal.ca/~olivere/data/Rossby_radius.nc.
+The binary is not committed; fetch and verify it with
+`bash bin/download_rossby_radius.sh` (pins
+sha256 `18da15b074b14e87bad24930146be7660c3ba3ac0745b87767cb850c9231ab96`).
 
 Notebook directory include the follow code:
 * Wavenumber_Spectra_Computation_GlobalBoxes: Estimate the SSH spectra (online)

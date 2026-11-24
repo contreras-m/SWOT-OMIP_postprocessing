@@ -120,6 +120,9 @@ def prepare_workdir(workdir: Path) -> None:
             shutil.copy2(src, workdir / name)
         else:
             raise FileNotFoundError(f"missing box file: {src}")
+    rossby = DATA_DIR / "Rossby_radius.nc"
+    if rossby.exists():
+        shutil.copy2(rossby, workdir / "Rossby_radius.nc")
     if not CACHE_GLOBALV2.exists():
         raise FileNotFoundError(
             f"figure cache not found at {CACHE_GLOBALV2}; run bin/prepare_figure_cache.py first"
