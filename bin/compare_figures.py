@@ -221,7 +221,7 @@ def script_candidates(ref_rel: str, figures_out: Path) -> list:
     out = []
     if not figures_out.exists():
         return out
-    stem = Path(ref_rel).with_suffix("")
+    stem = Path(ref_rel).stem
     for ext in (".png", ".pdf"):
         p = figures_out / f"{stem}{ext}"
         if p.exists():
