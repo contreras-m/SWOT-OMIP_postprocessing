@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Compare regenerated figure candidates against the paper-repo figures.
 
-Inputs: one or more audit run directories (as produced by
-bin/run_figure_notebooks.py) plus the paper repository. For each paper figure
-this tool gathers every candidate from the run dirs — the runner-captured
-inline cell outputs (``cells/*.png``) and the explicit ``FigV2/`` saves of the
-mapped producer notebook — scores each pair structurally, builds a labeled
-side-by-side contact sheet, and writes a verdict matrix plus a per-producer
-cross matrix (every reference against every candidate).
+Inputs: zero or more audit run directories (as produced by
+bin/run_figure_notebooks.py) plus the paper repository, plus (optionally) the
+output tree of the canonical figure scripts (``figures_out/``). For each paper
+figure this tool gathers every candidate — the runner-captured inline cell
+outputs (``cells/*.png``), the explicit ``FigV2/`` saves of the mapped producer
+notebook, and the script outputs (``figures_out/<reference-stem>.{png,pdf}``,
+kind ``script-output``) — scores each pair structurally, builds a labeled
+stacked contact sheet (1500 px columns, high-res PDF rasterization), and
+writes a verdict matrix plus a per-producer cross matrix.
 
 Honesty notes:
 * The committed paper figures went through undocumented manual finishing (the
@@ -18,7 +20,8 @@ Honesty notes:
 * The scores triage "near-identical / similar / drifts / different / not
   produced"; final acceptance is visual, via the contact sheets this tool
   writes.
-* PDF references are rasterized with macOS ``sips`` when available.
+* Scoring rasters at <=900 px; the sheets reload the reference and the top
+  candidates at 1500 px (PDFs via pdftoppm -r 200) for eyeballing.
 """
 
 from __future__ import annotations
@@ -70,15 +73,33 @@ FIGURE_LABEL = {p: lbl for lbl, p in {
 }.items()}
 FIGURE_MAP_LABEL = {path: FIGURE_LABEL[path] for path in FIGURE_MAP}
 
+# canonical producer script per paper reference ("scripts/figures/<name>")
+SCRIPT_OF = {
+    "Figures/agulhas_modelsswot.png": "fig1_agulhas.py",
+    "Figures/scatter_global_cumration_modelSWOT2_V3_150-350.png": "fig2_cumsd_ratio_scatter.py",
+    "Figures/meanlatratio_modelsswot_winter_v2.pdf": "fig3_meanlat_winter.py",
+    "Figures/winterslope_season_zonalaverage_V2_50-150.png": "fig4_winterslope_zonal.py",
+    "Figures_SI/agulhas_spectrum_geomarperyear.png": "s1_agulhas_geomar_peryear.py",
+    "Figures_SI/scatter_global_cumspectrum_modelSWOT2_winter-summer_150-350.png": "s2_cumspectrum_winter_summer.py",
+    "Figures_SI/scatter_global_cumration_modelSWOT2_V2_tidesv2_150-350.png": "s3_cumsd_ratio_tides.py",
+    "Figures_SI/cumspectrumratio_model_50-150.pdf": None,  # pending origin (ask contreras-m)
+    "Figures_SI/meanlatratio_modelsswot_summer_v2.pdf": "s5_meanlat_summer.py",
+    "Figures_SI/ratioslope_season_model_50-150.pdf": "s6_ratioslope.py",
+    "Figures_SI/std_slope_season_model_winter_50-150.pdf": "s7_std_slope_winter.py",
+    "Figures_SI/slope_season_model_summer_50-150.pdf": "s8_slope_summer.py",
+    "Figures_SI/std_slope_season_model_summer_50-150.pdf": "s9_std_slope_summer.py",
+    "Figures_SI/NATL_modelsswot_detided.png": "s10_natl_detided.py",
+}
 
-def _rasterize_pdf(path: Path, width: int = 900):
+
+def _rasterize_pdf(path: Path, width: int = 900, dpi: int = 100):
     """Rasterize a PDF with a white background. pdftoppm renders matplotlib's
     transparent PDF background correctly white; sips renders it dark, so its
     RGBA output is composited over white as a fallback."""
     with tempfile.TemporaryDirectory() as td:
         try:
             subprocess.run(
-                ["pdftoppm", "-png", "-r", "100", "-singlefile", str(path), str(Path(td) / "ref")],
+                ["pdftoppm", "-png", "-r", str(dpi), "-singlefile", str(path), str(Path(td) / "ref")],
                 check=True, capture_output=True,
             )
             return Image.open(Path(td) / "ref.png").convert("RGB")
@@ -99,10 +120,10 @@ def _rasterize_pdf(path: Path, width: int = 900):
             return None
 
 
-def load_image(path: Path, width: int = 900):
+def load_image(path: Path, width: int = 900, dpi: int = 100):
     """Load a PNG or PDF; scale to <=`width` px wide. None on failure."""
     if path.suffix.lower() == ".pdf":
-        img = _rasterize_pdf(path, width)
+        img = _rasterize_pdf(path, width, dpi)
         if img is None:
             return None
     else:
@@ -195,44 +216,74 @@ def candidates_for(slug: str, run_dirs: list) -> list:
     return out
 
 
-def sheet(ref_img, pairs, out_path: Path, title: str):
-    """Contact sheet: reference first, then up to four scored candidates."""
-    from PIL import Image, ImageDraw
+def script_candidates(ref_rel: str, figures_out: Path) -> list:
+    """Canonical script outputs for a reference: figures_out/<stem>.{png,pdf}."""
+    out = []
+    if not figures_out.exists():
+        return out
+    stem = Path(ref_rel).with_suffix("")
+    for ext in (".png", ".pdf"):
+        p = figures_out / f"{stem}{ext}"
+        if p.exists():
+            out.append((p, "script-output"))
+    return out
 
+
+def sheet(ref_img, pairs, out_path: Path, title: str, img_w: int = 1500):
+    """Stacked contact sheet: reference first, then up to four scored candidates.
+
+    `ref_img` / `pairs` carry the HIGH-RES loads (caller reloads at img_w);
+    images are autocropped and capped at (img_w, 2400)."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    try:
+        font = ImageFont.load_default(size=28)
+    except TypeError:  # older Pillow: fixed-size default font
+        font = ImageFont.load_default()
+    W = img_w + 40
     entries = []
     if ref_img is not None:
         r = autocrop(ref_img) or ref_img
-        r.thumbnail((450, 1400))
+        r.thumbnail((img_w, 2400))
         entries.append(("REFERENCE", r))
     for (path, kind), cand_img, scores in pairs[:4]:
+        if cand_img is None:
+            continue
         c = autocrop(cand_img) or cand_img
-        c.thumbnail((450, 1400))
-        tag = path.name
+        c.thumbnail((img_w, 2400))
+        tag = f"{path.name} [{kind}]"
         if scores:
-            tag += f" [{kind}] corr={scores['corr']:.3f} mad={scores['mad']:.3f}"
+            tag += f" corr={scores['corr']:.3f} mad={scores['mad']:.3f}"
         entries.append((tag, c))
-    H = sum(e[1].size[1] + 38 for e in entries) + 46
-    sheet_img = Image.new("RGB", (470, H), (252, 252, 252))
+    H = sum(e[1].size[1] + 64 for e in entries) + 60
+    sheet_img = Image.new("RGB", (W, H), (252, 252, 252))
     draw = ImageDraw.Draw(sheet_img)
-    y = 10
-    draw.text((10, y), title[:80], fill=(10, 10, 10))
-    y += 32
+    y = 14
+    draw.text((20, y), title[:120], fill=(10, 10, 10), font=font)
+    y += 44
     for tag, img in entries:
-        draw.text((10, y), tag[:100], fill=(40, 40, 40))
-        sheet_img.paste(img, (10, y + 20))
-        y += img.size[1] + 38
+        draw.text((20, y), tag[:140], fill=(40, 40, 40), font=font)
+        y += 36
+        sheet_img.paste(img, (20, y))
+        y += img.size[1] + 28
     sheet_img.save(out_path)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("run_dirs", nargs="+", type=Path, help="figure_runs/<ts> dir(s)")
+    ap.add_argument("run_dirs", nargs="*", type=Path, help="figure_runs/<ts> dir(s)")
     ap.add_argument("--paper-root", type=Path, default=PAPER_ROOT)
+    ap.add_argument("--figures-out", type=Path, default=REPO_ROOT / "figures_out",
+                    help="canonical script output dir (default <repo>/figures_out)")
+    ap.add_argument("--sheet-width", type=int, default=1500)
+    ap.add_argument("--ref-dpi", type=int, default=200)
     ap.add_argument("--out", type=Path, default=None,
-                    help="output dir (default <last-run-dir>/comparison)")
+                    help="output dir (default <last-run-dir>/comparison, else <figures-out>/comparison)")
     args = ap.parse_args()
 
-    out_dir = args.out or (args.run_dirs[-1] / "comparison")
+    out_dir = args.out or (
+        (args.run_dirs[-1] / "comparison") if args.run_dirs else (args.figures_out / "comparison")
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
     run_dirs = [rd for rd in args.run_dirs if rd.exists()]
 
@@ -268,25 +319,32 @@ def main() -> int:
     for ref_rel, slug in FIGURE_MAP.items():
         label = FIGURE_MAP_LABEL[ref_rel]
         ref_img = next((r[2] for r in refs.get(slug, []) if r[0] == ref_rel), None)
+        if ref_img is None and (args.paper_root / ref_rel).exists():
+            # orphaned references are not preloaded per producer — load on demand
+            ref_img = load_image(args.paper_root / ref_rel)
         entry = {
             "figure": label, "reference": ref_rel,
             "producer": slug or "ORPHANED (ask)",
+            "script": SCRIPT_OF.get(ref_rel) or "—",
             "ref_exists": (args.paper_root / ref_rel).exists(),
             "n_candidates": 0, "best": None, "candidates": [], "verdict": None,
         }
-        if slug is None:
-            entry["verdict"] = "orphaned-no-producer"
-            results.append(entry)
-            continue
         if ref_img is None:
             entry["verdict"] = "ref-pdf-unavailable"
             results.append(entry)
             continue
         pairs = []
-        for (path, kind), cand_img in cands[slug]:
+        if slug is not None:
+            for (path, kind), cand_img in cands.get(slug, []):
+                if cand_img is None:
+                    continue
+                scores, extra = score_pair(ref_img, cand_img)
+                pairs.append(((path, kind), cand_img, scores))
+        for path, kind in script_candidates(ref_rel, args.figures_out):
+            cand_img = load_image(path)
             if cand_img is None:
                 continue
-            scores, extra = score_pair(ref_img, cand_img)
+            scores, _ = score_pair(ref_img, cand_img)
             pairs.append(((path, kind), cand_img, scores))
         pairs.sort(key=lambda p: -(p[2]["corr"] if p[2] else -1))
         entry["n_candidates"] = len(pairs)
@@ -296,12 +354,25 @@ def main() -> int:
             best = pairs[0]
             entry["best"] = {"file": str(best[0][0]), "kind": best[0][1], **best[2]}
             entry["verdict"] = verdict(best[2])
+        elif slug is None:
+            entry["verdict"] = "orphaned-no-producer"
         else:
             entry["verdict"] = "not-produced"
+        # sheet: script outputs always shown first (canonical), then the best
+        # notebook candidates; rebuilt at high resolution for eyeballing
+        script_pairs = [p for p in pairs if p[0][1] == "script-output"][:4]
+        nb_pairs = [p for p in pairs if p[0][1] != "script-output"][:4]
+        shown = script_pairs + nb_pairs
+        ref_hi = load_image(args.paper_root / ref_rel, args.sheet_width, args.ref_dpi)
+        sheet_pairs = [
+            ((p, k), load_image(p, args.sheet_width, args.ref_dpi), s)
+            for (p, k), _, s in shown
+        ]
         sheet(
-            ref_img, pairs,
+            ref_hi, sheet_pairs,
             out_dir / f"{label}_{Path(ref_rel).name}.sheet.png",
-            f"{label}: {Path(ref_rel).name} — producer: {slug}",
+            f"{label}: {Path(ref_rel).name} — producer: {slug or 'ask'} | script: {entry['script']}",
+            img_w=args.sheet_width,
         )
         results.append(entry)
 
@@ -313,8 +384,8 @@ def main() -> int:
         "- scoring is crop-tolerant (autocropped, grayscale NCC/MAD).",
         "- NOTE: committed paper figures carry manual finishing (patched/labeled",
         "  files exist in the paper repo), so 'similar' bands are heuristics;",        "  the contact sheets are the acceptance artifact.", "",
-        "| figure | reference | producer | verdict | best corr | best mad | best cand |",
-        "|---|---|---|---|---|---|---|",
+        "| figure | reference | producer | script | verdict | best corr | best mad | best cand |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in results:
         best = r.get("best")
@@ -323,7 +394,7 @@ def main() -> int:
         name = Path(best["file"]).name if best else "—"
         lines.append(
             f"| {r['figure']} | {Path(r['reference']).name} | {r['producer']} "
-            f"| {r['verdict']} | {corr} | {mad} | {name} |"
+            f"| {r['script']} | {r['verdict']} | {corr} | {mad} | {name} |"
         )
     lines += ["", "## Cross matrices (reference x candidate corr per producer)", ""]
     for slug, rows in xmatrix.items():

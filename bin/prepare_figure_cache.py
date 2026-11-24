@@ -40,10 +40,21 @@ REGIONS = {
         keys=["GLO36V1", "GLO36V1NOTIDE", "SWOT"],
         seasons=["JFM", "JAS"],
     ),
+    # Every box (0-based indices 0..N-1 in geojson order) — the "global" sets
+    # used by the global figure notebooks (which call position_boxes bare).
+    "global": dict(
+        regcoord=None,
+        keys=["GLO12V4", "GLO36V1", "GLO36V1NOTIDE", "NOC12", "NOC025", "LLC4320", "SWOT"],
+        seasons=["JFM", "JAS"],
+    ),
 }
 
 
-def region_boxes(regcoord: list) -> list:
+def region_boxes(regcoord: list | None) -> list:
+    if regcoord is None:
+        all_features = json.loads(GEOJSON.read_text())["features"]
+        return list(range(len(all_features)))
+
     import position_function as pf
 
     # position_boxes must see the geojson; cwd to its folder for the bare open().
@@ -173,7 +184,7 @@ def main() -> int:
     import argparse
 
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--regions", default="agulhas,natl", help="comma list from: agulhas,natl")
+    ap.add_argument("--regions", default="agulhas,natl", help="comma list from: agulhas,natl,global")
     ap.add_argument("--geomar-root", type=Path, default=DEFAULT_GEOMAR_ROOT)
     ap.add_argument("--dest", type=Path, default=REPO_ROOT / "figure_cache" / "GLOBALv2")
     ap.add_argument("--dry-run", action="store_true")
