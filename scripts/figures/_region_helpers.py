@@ -10,9 +10,23 @@ Recorded deviations from the notebook code (only these):
   the injected `read(key, box, season, year=None)` (from _common.read_spectrum
   via a small closure); offline cache by default, anonymous DIVE with
   --online. GEOMAR keeps its per-year and year-less read pattern.
-- plot_psd(..., savefig=False): the notebooks pass savefig=True, which only
-  re-saves globa_JFM.png to the cwd per inset plot (no layout effect) --
-  the scripts keep the working tree clean.
+- plot_psd(..., savefig=...): the notebooks pass savefig=True with
+  filename="globa_JFM.png" (the AG/GS cell code), which re-saves that PNG to
+  the cwd after every inset plot. This is NOT layout-neutral: each mid-loop
+  savefig renders the figure, which settles the cartopy map axes'
+  aspect/extent state, and every inset plot placed after the first lands
+  displaced without it (found while porting s10_natl_detided.py on
+  2026-11-24: the verbatim notebook cell 8 vs the savefig=False variant
+  scores corr 1.000 against that port, but only corr ~0.24 against the
+  committed notebook render). Both variants therefore keep savefig=True and
+  redirect the litter filename into a per-process scratch dir
+  (_savefig_scratch, cleaned at exit) -- layout-identical, tree-clean.
+- GS variant only (found while porting s10_natl_detided.py, 2026-11-24):
+  the legend call inside plot_boxspectrum_gs now passes bba_leg=(-3, 1)
+  exactly as the GS notebook cell 5 does; it had initially been ported
+  with the AG variant's (4.5, 2), which relocates the inset legend. The
+  notebook defs' dead `max_horizontal_gridsize = [0,0,0]` assignment is
+  not carried.
 
 Everything else -- iteration order, the 50-600 km log-log clipping, the
 hemisphere-dependent ratio (north: JFM/JAS, south: JAS/JFM), the GEOMAR
@@ -24,6 +38,11 @@ output reproduces the notebook figures.
 
 from __future__ import annotations
 
+import atexit
+import shutil
+import tempfile
+from pathlib import Path
+
 import numpy as np
 
 import plot_psd1Xglobal1 as pp2X
@@ -34,6 +53,23 @@ def reader_from(cfg):
     from _common import read_spectrum
 
     return lambda key, box, season, year=None: read_spectrum(cfg, key, box, season, year)
+
+
+_SCRATCH = None
+
+
+def _savefig_scratch() -> str:
+    """Filename for the notebooks' mid-loop plot_psd savefig calls.
+
+    The notebooks re-save "globa_JFM.png" to the cwd after every inset plot;
+    that render pass settles the cartopy map state (see the module docstring),
+    so savefig=True is kept -- but the litter goes to a per-process scratch
+    dir, removed at interpreter exit."""
+    global _SCRATCH
+    if _SCRATCH is None:
+        _SCRATCH = tempfile.mkdtemp(prefix="swotomip_psd_scratch_")
+        atexit.register(shutil.rmtree, _SCRATCH, ignore_errors=True)
+    return str(Path(_SCRATCH) / "globa_JFM.png")
 
 
 # ---------------------------------------------------------------- AG variant
@@ -145,7 +181,7 @@ def plot_boxspectrum(fig, region_boxes, models, modellabel, cds, selected,
                           xtick_show=True, ytick_show=True, xlabel_upper=False,
                           xlabel_lower=False,
                           wavelength_ticks=np.array([50, 250, 100, 500]),
-                          ylabel=False, savefig=False,
+                          ylabel=False, savefig=True, filename=_savefig_scratch(),
                           plot_transparent=False, slope=False,
                           scaleX='log', scaleY='log')
         else:
@@ -155,7 +191,7 @@ def plot_boxspectrum(fig, region_boxes, models, modellabel, cds, selected,
                           xtick_show=True, ytick_show=True, xlabel_upper=False,
                           xlabel_lower=False,
                           wavelength_ticks=np.array([50, 250, 100, 500]),
-                          ylabel=False, savefig=False,
+                          ylabel=False, savefig=True, filename=_savefig_scratch(),
                           plot_transparent=False, slope=False,
                           scaleX='log', scaleY='log')
         ibox = ibox + 1
@@ -339,11 +375,11 @@ def plot_boxspectrum_gs(fig, region_boxes, models, modellabel, cds, selected,
         if ibox == box_legend:
             pp2X.plot_psd(inset_ax, np.squeeze(np.array(freqJAS)).T, psds=Ra, unit="m2",
                           psd_labels=modellabel,
-                          legend=True, bba_leg=(4.5, 2), colors=colors, lsts=lsts,
+                          legend=True, bba_leg=(-3, 1), colors=colors, lsts=lsts,
                           xtick_show=True, ytick_show=True, xlabel_upper=False,
                           xlabel_lower=False,
                           wavelength_ticks=np.array([50, 250, 100, 500]),
-                          ylabel=False, savefig=False,
+                          ylabel=False, savefig=True, filename=_savefig_scratch(),
                           plot_transparent=False, slope=False,
                           scaleX='log', scaleY='log')
         else:
@@ -353,7 +389,7 @@ def plot_boxspectrum_gs(fig, region_boxes, models, modellabel, cds, selected,
                           xtick_show=True, ytick_show=True, xlabel_upper=False,
                           xlabel_lower=False,
                           wavelength_ticks=np.array([50, 250, 100, 500]),
-                          ylabel=False, savefig=False,
+                          ylabel=False, savefig=True, filename=_savefig_scratch(),
                           plot_transparent=False, slope=False,
                           scaleX='log', scaleY='log')
         ibox = ibox + 1

@@ -1,0 +1,101 @@
+# FIGURES.md — the paper figures, their scripts, and the workflow
+
+Every paper figure of `2026_swot-omip-paper-seasonality` (4 main + 10 SI) is
+produced by a **parameterized script** in `scripts/figures/` — the
+producer-of-record. The notebooks stay as reader-facing exploration; the
+scripts are the canonical, minimal, reproducible path (offline spectra cache
+by default, `--online` for anonymous DIVE reads).
+
+Conventions (locked 2026-11-24): scripts save **PNG (300 dpi) + PDF** with
+`bbox_inches="tight"` — the in-code replacement of the manual finishing the
+committed paper figures carried (`*_patched.pdf` / `*_labeled.pdf`). No
+manual finishing anywhere; acceptance is visual (contact sheets) plus this
+manifest.
+
+## Manifest
+
+| Figure | Paper repo file (tex-referenced) | Producer script | Notebook source (cells) | Status |
+|---|---|---|---|---|
+| Fig 1 | `Figures/agulhas_modelsswot.png` | `fig1_agulhas.py` | `region_plot_spectr_noonl_AG-Copy1-IMPR` (10) | ready |
+| Fig 2 | `Figures/scatter_global_cumration_modelSWOT2_V3_150-350.png` | `fig2_cumsd_ratio_scatter.py` | `plot_cumpsd_ratio-scatter` (5,7,9,10,12,13) | ready |
+| Fig 3 | `Figures/meanlatratio_modelsswot_winter_v2.pdf` | `fig3_meanlat_winter.py` | `plotscale_ratioSWOT_meanlat_V3` (4,6,8,10,12) | ready (needs `data/Rossby_radius.nc`) |
+| Fig 4 | `Figures/winterslope_season_zonalaverage_V2_50-150.png` | `fig4_winterslope_zonal.py` | `plot_slope_onl_v3+tides` (4,5,7,9,12) | ready |
+| S1 | `Figures_SI/agulhas_spectrum_geomarperyear.png` | `s1_agulhas_geomar_peryear.py` | AG notebook (11) | ready |
+| S2 | `Figures_SI/scatter_global_cumspectrum_modelSWOT2_winter-summer_150-350.png` | `s2_cumspectrum_winter_summer.py` | `plot_cumpsd_scatterplt_SI` (5,7,9,10,13,14) | **design pending eyeball**: combined 2x2 winter/summer x band arrangement per the SI caption; the committed reference is a map + one 2x5 scatter block (see NOTES) |
+| S3 | `Figures_SI/scatter_global_cumration_modelSWOT2_V2_tidesv2_150-350.png` | `s3_cumsd_ratio_tides.py` | `plot_cumpsd_ratio-scatter` (5,7,12,15,16,17) | ready |
+| S4 | `Figures_SI/cumspectrumratio_model_50-150.pdf` | **none** | **orphaned — producer unknown, ask contreras-m** | pending |
+| S5 | `Figures_SI/meanlatratio_modelsswot_summer_v2.pdf` | `s5_meanlat_summer.py` | plotscale (4,6,8,10,13) | ready (Rossby) |
+| S6 | `Figures_SI/ratioslope_season_model_50-150.pdf` | `s6_ratioslope.py` | slope notebook (4,5,7,9,11,13) | ready |
+| S7 | `Figures_SI/std_slope_season_model_winter_50-150.pdf` | `s7_std_slope_winter.py` | slope notebook (4,5,7,9,15) | ready |
+| S8 | `Figures_SI/slope_season_model_summer_50-150.pdf` | `s8_slope_summer.py` | slope notebook (4,5,7,9,16) | ready |
+| S9 | `Figures_SI/std_slope_season_model_summer_50-150.pdf` | `s9_std_slope_summer.py` | slope notebook (4,5,7,9,17) | ready |
+| S10 | `Figures_SI/NATL_modelsswot_detided.png` | `s10_natl_detided.py` | `region_plot_spectr_noonl_GS-Copy1-IMPR` (8, helpers 4-6) | ready |
+
+Also produced by the slope notebook but not referenced by the paper (removed
+from the paper repo in the 2026-11-24 tidy): `slope_season_model_winter_50-150`
+(slope notebook cell 14). Easy to revive as a script if ever wanted.
+
+## Workflow
+
+```bash
+# 1. one-time: materialize the offline cache (~50 MB, idempotent)
+python3 bin/prepare_figure_cache.py --regions agulhas,natl,global
+
+# 2. produce a figure (offline cache; --online reads DIVE anonymously)
+.venv/bin/python3 scripts/figures/fig1_agulhas.py
+
+# 3. score + contact sheets against the paper repo + audit runs
+.venv/bin/python3 bin/compare_figures.py figure_runs/<ts> --out <any-dir>
+#    (script outputs from figures_out/ are picked up automatically)
+
+# 4. after visual approval: copy into the paper repo + commit there
+.venv/bin/python3 bin/sync_figure_to_paper.py Fig1
+cd ../2026_swot-omip-paper-seasonality && git add -A && git commit  # message is printed by the sync helper
+```
+
+Scripts write both `<stem>.png` and `<stem>.pdf` under `figures_out/`
+(gitignored). `sync_figure_to_paper.py` copies **only the tex-referenced
+file** into the paper repo (the sibling format stays here) so the paper repo
+does not accumulate unreferenced files again.
+
+## Scoring notes
+
+`bin/compare_figures.py` scores are crop-tolerant structural triage, NOT
+acceptance: the committed paper figures carry undocumented manual finishing,
+so even a faithful reproduction lands in the "drifts" band. The contact
+sheets (1500 px, `pdftoppm -r 200`) are the acceptance artifact.
+
+Script-output scores vs the committed references
+(`figure_runs/scriptmatrix-20261124/`, 2026-11-24): Fig1 0.821, Fig2 0.965
+("similar"), Fig3 0.852, Fig4 0.872, S1 0.847, S3 0.875, S5 0.844, S6 0.826,
+S7 0.806, S8 0.711, S9 0.838, S10 0.726 — every script matches or exceeds
+what the committed notebooks' own renders score against the same references,
+which is the fidelity check that matters pre-approval.
+
+## NOTES — quirks kept faithfully (paper-impacting questions for contreras-m)
+
+- **S2 layout**: the committed SI file is a map + colorbar + a single 2x5
+  scatter block — it matches *one* notebook figure, not the
+  winter-summer-combined design the filename and SI caption describe. The
+  script implements the combined design (caption-literal). Which one the
+  paper should ship is an editorial call (sheet:
+  `figure_runs/scriptmatrix-20261124/S2_*.sheet.png`).
+- **`ratio_model` season bug (Fig3/S5)**: the SWOT reference branch ignores
+  its `season` argument, so the "summer" ratio divides model-summer by
+  SWOT-winter per hemisphere. Kept faithfully (the committed figures carry
+  it); flag to contreras-m.
+- **latindex offset (fig2/S3-family cells)**: the box-mapping loop skips
+  geojson features 14/15, so scatter-color indices lag the 282-box list by
+  two from feature 14 on. Preserved; the committed figures carry it.
+- **S8/S9 colorbars say "winter"** on summer figures (notebook verbatim).
+- **GEOMAR year-less reads** (fig1/S1, map insets): the notebook reads
+  `GLOBALv2/GEOMAR/Global_box_{b}_{season}_GEOMAR.json` (no year). Those
+  files were never committed anywhere; the cache carries **disclosed 3-year
+  -mean stand-ins**
+  (`figure_cache/GLOBALv2/GEOMAR/_yearless_provenance.md`). True origin:
+  ask contreras-m.
+- **`plot_psd(savefig=True)` in the region notebooks is
+  layout-carrying** — the mid-loop `globa_JFM.png` re-save settles the
+  cartopy map state; removing it displaces every inset after the first
+  (found while porting S10; both ported variants keep the render pass, the
+  litter goes to a process scratch dir).

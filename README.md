@@ -47,3 +47,21 @@ uv pip install --python .venv -r requirements-pipeline.txt
 
 `bin/verify_manifest.py` refreshes `spectra_manifest.yaml` by probing the stores (read-only).
 
+## Paper figures (`scripts/figures/`)
+
+Every paper figure is produced by a parameterized script — the
+producer-of-record — png (300 dpi) + pdf with a tight crop; the notebooks
+remain as exploration. Full manifest, workflow and known quirks:
+[FIGURES.md](FIGURES.md). Quickstart:
+
+```bash
+python3 bin/prepare_figure_cache.py --regions agulhas,natl,global   # once, ~50 MB
+.venv/bin/python3 scripts/figures/fig1_agulhas.py                   # offline cache (add --online for anon DIVE)
+.venv/bin/python3 bin/compare_figures.py --out /tmp/check           # scores + 1500 px contact sheets
+.venv/bin/python3 bin/sync_figure_to_paper.py Fig1                   # copy the tex-referenced file into the paper repo
+```
+
+The audit tooling behind this lives in `bin/run_figure_notebooks.py`
+(nbclient runner with disclosed s3fs shim) and `bin/compare_figures.py`
+(crop-tolerant structural scoring, cross matrices, contact sheets).
+
