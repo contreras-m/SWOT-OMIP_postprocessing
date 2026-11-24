@@ -1,5 +1,7 @@
 spectra_out/
 spectra_runs.jsonl
+figure_runs/
+figure_cache/
 __pycache__/
 *.pyc
 .pytest_cache/
