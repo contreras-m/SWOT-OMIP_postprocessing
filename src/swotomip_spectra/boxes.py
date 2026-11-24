@@ -47,7 +47,7 @@ def load_boxes(geojson_path) -> List[Box]:
 
 def normalize_lon_polygon(geometry):
     """Longitude-normalize a polygon to [-180, 180] (corrected port of
-    DataPreprocessing_listv2.normalize_longitude for Polygon geometries)."""
+    widetrax.DataPreprocessing.normalize_longitude for Polygon geometries)."""
     if isinstance(geometry, Polygon):
         def shift(coords):
             return [((lon + 180) % 360 - 180, lat) for lon, lat in coords]

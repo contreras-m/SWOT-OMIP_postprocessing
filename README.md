@@ -19,7 +19,7 @@ The functions needed for the notebook are located in the src directory.
 
 - [IGE-OPERA/swot-omip](https://github.com/IGE-OPERA/swot-omip): public protocol repo — data conventions, dataset metadata, contribution status, and the one-box demo notebook (`_processing/`).
 - **This repo** (`contreras-m/SWOT-OMIP_postprocessing`): paper-specific production — the parameterized spectra pipeline (`src/swotomip_spectra/` + `bin/compute_spectra.py`), the plot notebooks behind the paper figures, box definitions (`data/`), the cycle calendar, and `spectra_manifest.yaml`.
-- [IGE-OPERA/widetrax](https://github.com/IGE-OPERA/widetrax): reusable PSD/interpolation library. This repo vendors the Spectra compute chain (`src/Spectra.py`, compute functions identical to widetrax v1.1.1) and hosts un-merged production deltas (`src/DataPreprocessing_listv2.py`, patched `fill_nan`/`plot_psd`) pending upstreaming.
+- [IGE-OPERA/widetrax](https://github.com/IGE-OPERA/widetrax) (>= 1.2, on PyPI): the PSD/interpolation library. The SWOT-OMIP production deltas (pass preselection + list readers, pyinterp>=2026 `fill_nan`, `plot_psd` styling) were upstreamed via IGE-OPERA/widetrax#20; the vendored copies (`src/DataPreprocessing_listv2.py`, `src/Spectra.py`) are removed and notebooks import `widetrax` directly.
 - `contreras-m/SWOT_OMIP-processing`: earlier notebook generation, **superseded by this repo**.
 
 ## Spectra pipeline (`bin/compute_spectra.py`)
