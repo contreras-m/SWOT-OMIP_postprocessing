@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below. NOTE: placeholder
+  author list — to be finalized with the paper's author list before
+  submission.
+type: software
+title: SWOT-OMIP_postprocessing
+version: 0.1.0
+authors:
+  - name: "SWOT-OMIP seasonality paper authors (contreras-m, lesommer et al.)"
+repository-code: "https://github.com/contreras-m/SWOT-OMIP_postprocessing"
+abstract: >-
+  Spectra pipeline and figure producer scripts for the SWOT-OMIP
+  ocean-model intercomparison paper on the seasonal variability of
+  sea-surface height.
+keywords:
+  - SWOT
+  - ocean modelling
+  - sea surface height
+  - wavenumber spectra
+  - reproducibility
+license: MIT

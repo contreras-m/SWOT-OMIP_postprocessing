@@ -1,0 +1,26 @@
+name: figure-smoke
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Environment (README walkthrough, step 1)
+        run: |
+          uv venv .venv --python 3.12
+          uv pip install --python .venv -r requirements-pipeline.txt
+      - name: NATL spectra cache (fully public path, no GEOMAR mirror)
+        run: .venv/bin/python3 bin/prepare_figure_cache.py --regions natl
+      - name: Produce Figure S10 from the cache
+        run: .venv/bin/python3 scripts/figures/s10_natl_detided.py
+      - name: Assert outputs
+        run: |
+          test -f figures_out/NATL_modelsswot_detided.png
+          test -f figures_out/NATL_modelsswot_detided.pdf

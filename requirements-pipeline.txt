@@ -11,6 +11,7 @@ pyyaml
 shapely>=2
 geopandas
 watermark
+cartopy
 matplotlib
 netCDF4
 pytest

@@ -5,7 +5,9 @@ The region notebooks (AG / GS) read stored spectra JSONs from a relative
 `GLOBALv2/` folder: `GLOBALv2/{KEY}/Global_box_{box}_{season}_{KEY}.json`.
 Public keys are fetched anonymously from the legacy DIVE store (anonymous GET
 is open there; anonymous *listing* is denied, so keys are constructed), and the
-GEOMAR (eINALT100) spectra are copied from the local workspace mirror.
+GEOMAR (eINALT100) spectra are copied from the local workspace mirror — if the
+mirror is absent the public keys are still fetched and GEOMAR is skipped with
+a warning (the GEOMAR-dependent figures, fig1/S1, will then fail on read).
 
 Idempotent: existing files are kept, only missing ones are fetched.
 Run from anywhere; paths resolve relative to the repo root.
@@ -199,10 +201,12 @@ def main() -> int:
     if not GEOJSON.exists():
         print(f"ERROR: box file not found: {GEOJSON}")
         return 1
-    if not args.geomar_root.exists():
-        print(f"ERROR: GEOMAR spectra mirror not found: {args.geomar_root}")
-        print("       (expected data/GEOMAR_SSHspectrum/{2021,2022,2023} in the workspace)")
-        return 1
+    geomar_available = args.geomar_root.exists()
+    if not geomar_available:
+        print(f"WARN: GEOMAR spectra mirror not found: {args.geomar_root}")
+        print("     (point --geomar-root at a mirror of Global_box_*_GEOMAR.json under")
+        print("      year dirs 2021-2023; fig1/S1 need GEOMAR in the cache, the other")
+        print("      figures run without it — skipping GEOMAR for now)")
 
     summary = {"dest": str(dest), "dry_run": args.dry_run, "regions": {}}
     for region in args.regions.split(","):
@@ -226,10 +230,13 @@ def main() -> int:
             print(f"    MISSING {miss}")
 
     if not args.dry_run:
-        gm = copy_geomar(dest, args.geomar_root)
+        if geomar_available:
+            gm = copy_geomar(dest, args.geomar_root)
+        else:
+            gm = {"copied": 0, "missing_mirror": str(args.geomar_root)}
         summary["geomar"] = gm
         print(f"[GEOMAR] copied={gm['copied']}")
-        if not args.no_yearless_mean:
+        if geomar_available and not args.no_yearless_mean:
             yl = make_geomar_yearless(dest)
             summary["geomar_yearless_mean"] = yl
             print(

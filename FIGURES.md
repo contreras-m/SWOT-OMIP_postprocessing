@@ -39,7 +39,7 @@ from the paper repo in the 2026-11-24 tidy): `slope_season_model_winter_50-150`
 
 ```bash
 # 1. one-time: materialize the offline cache (~50 MB, idempotent)
-python3 bin/prepare_figure_cache.py --regions agulhas,natl,global
+.venv/bin/python3 bin/prepare_figure_cache.py --regions agulhas,natl,global
 
 # 2. produce a figure (offline cache; --online reads DIVE anonymously)
 .venv/bin/python3 scripts/figures/fig1_agulhas.py
