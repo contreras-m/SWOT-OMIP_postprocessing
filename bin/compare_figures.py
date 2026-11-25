@@ -47,7 +47,7 @@ FIGURE_MAP = {
     "Figures_SI/agulhas_spectrum_geomarperyear.png": "AG",
     "Figures_SI/scatter_global_cumspectrum_modelSWOT2_winter-summer_150-350.png": "cumpsd_scatterplt_SI",
     "Figures_SI/scatter_global_cumration_modelSWOT2_V2_tidesv2_150-350.png": "cumpsd_ratio_scatter",
-    "Figures_SI/cumspectrumratio_model_50-150.pdf": "plot_cumratio_map",  # producer: contreras-m's uploaded notebook (9886daf)
+    "Figures_SI/cumspectrumratio_model_50-150.png": "plot_cumratio_map",  # producer: contreras-m's uploaded notebook (9886daf); the paper repo swapped the S4 PDF for a PNG (paper commit 0f81b73)
     "Figures_SI/meanlatratio_modelsswot_summer_v2.pdf": "plotscale_meanlat",
     "Figures_SI/ratioslope_season_model_50-150.pdf": "slope_onl",
     "Figures_SI/std_slope_season_model_winter_50-150.pdf": "slope_onl",
@@ -63,7 +63,7 @@ FIGURE_LABEL = {p: lbl for lbl, p in {
     "S1": "Figures_SI/agulhas_spectrum_geomarperyear.png",
     "S2": "Figures_SI/scatter_global_cumspectrum_modelSWOT2_winter-summer_150-350.png",
     "S3": "Figures_SI/scatter_global_cumration_modelSWOT2_V2_tidesv2_150-350.png",
-    "S4": "Figures_SI/cumspectrumratio_model_50-150.pdf",
+    "S4": "Figures_SI/cumspectrumratio_model_50-150.png",
     "S5": "Figures_SI/meanlatratio_modelsswot_summer_v2.pdf",
     "S6": "Figures_SI/ratioslope_season_model_50-150.pdf",
     "S7": "Figures_SI/std_slope_season_model_winter_50-150.pdf",
@@ -82,7 +82,7 @@ SCRIPT_OF = {
     "Figures_SI/agulhas_spectrum_geomarperyear.png": "s1_agulhas_geomar_peryear.py",
     "Figures_SI/scatter_global_cumspectrum_modelSWOT2_winter-summer_150-350.png": "s2_cumspectrum_winter_summer.py",
     "Figures_SI/scatter_global_cumration_modelSWOT2_V2_tidesv2_150-350.png": "s3_cumsd_ratio_tides.py",
-    "Figures_SI/cumspectrumratio_model_50-150.pdf": "s4_cumratio_map.py",
+    "Figures_SI/cumspectrumratio_model_50-150.png": "s4_cumratio_map.py",
     "Figures_SI/meanlatratio_modelsswot_summer_v2.pdf": "s5_meanlat_summer.py",
     "Figures_SI/ratioslope_season_model_50-150.pdf": "s6_ratioslope.py",
     "Figures_SI/std_slope_season_model_winter_50-150.pdf": "s7_std_slope_winter.py",
