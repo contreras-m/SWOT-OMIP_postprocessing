@@ -1,5 +1,9 @@
 spectra_out/
 spectra_runs.jsonl
+figure_runs/
+figure_cache/
+figures_out/
+data/Rossby_radius.nc
 __pycache__/
 *.pyc
 .pytest_cache/

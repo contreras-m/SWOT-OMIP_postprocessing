@@ -17,7 +17,7 @@ from collections import defaultdict
 
 def read_json_s3(endpoint_url,file,mode='online'):
         if mode=='online':
-            fs = s3fs.S3FileSystem(key="xxx",secret="xxx", endpoint_url=endpoint_url)
+            fs = s3fs.S3FileSystem(anon=True, endpoint_url=endpoint_url)
             with fs.open(file, mode='rb') as fileObj:
                 data = json.load(fileObj)
         elif mode=='offline':
