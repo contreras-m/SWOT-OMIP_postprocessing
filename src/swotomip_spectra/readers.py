@@ -1,6 +1,6 @@
-"""Pass-file loading with spatial subsetting (replicates DataPreprocessing_listv2
-read_swot_ncfiles_S3folder_list / read_swot_ncfiles_local_list, with an explicit
-longitude-convention normalization step)."""
+"""Pass-file loading with spatial subsetting (mirrors widetrax.DataPreprocessing
+read_swot_ncfiles_S3folder_list / read_swot_ncfiles_local_list (widetrax >= 1.2),
+with an explicit longitude-convention normalization step)."""
 
 from __future__ import annotations
 
