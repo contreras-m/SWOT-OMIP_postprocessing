@@ -29,13 +29,12 @@ Recorded deviations from the notebook/src code (only these):
   _common.GEOJSON. Likewise load_latindex takes the geojson path.
 - cell 12's trailing print(latindex[0]) is dropped (scripts print nothing
   beyond the save/done lines).
-
-Preserved notebook quirks (not deviations; the committed paper figures carry
-them): latindex is built after skipping geojson features 14 and 15, so its
-positions index the 280-long latboxes list while F/R are 282-long per-box
-lists; the consuming code applies those positions to the 282-long lists
-verbatim, leaving a small systematic box-alignment offset after the skipped
-gap. The 60-degree latitude bin is empty (nan zonal means + RuntimeWarning).
+- author-approved change (contreras-m, 2026-11-25): the latindex block no
+  longer skips geojson features 14/15 -- the skip was a leftover bug guard
+  (confirmed by the notebook author), and carrying it left the latitude-bin
+  positions indexing a 280-long list against 282-long per-box lists. latindex
+  now covers all 282 features. The 60-degree latitude bin remains empty
+  (nan zonal means + RuntimeWarning), as in the notebooks.
 """
 
 import json
@@ -173,10 +172,9 @@ def load_latindex(geojson):
     latpos = np.arange(-70, 61, 10)
 
     for i, feature in enumerate(data["features"]):
-        if (i != 14) and (i != 15):
-            coords = feature["geometry"]["coordinates"][0]
-            first_lat = coords[0][1]
-            latboxes.append(first_lat)
+        coords = feature["geometry"]["coordinates"][0]
+        first_lat = coords[0][1]
+        latboxes.append(first_lat)
 
     latindex = []
     for i in latpos:

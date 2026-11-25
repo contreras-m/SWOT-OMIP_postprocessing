@@ -28,12 +28,22 @@ Recorded deviations from the notebook code (only these):
   notebook defs' dead `max_horizontal_gridsize = [0,0,0]` assignment is
   not carried.
 
+- author-approved changes (contreras-m, 2026-11-25), intentional deviations
+  from the committed notebooks:
+  * GEOMAR is an explicit 3-year average in the map insets: per-year reads
+    for both seasons, ratio of the 3-yr means. The notebook read an
+    undocumented year-less file for season 2 (the cache stand-ins were
+    3-yr means, so season 2 is numerically unchanged) while season 1 used
+    only the last (2023) spectrum in the ratio; the paper text already
+    states GEOMAR is the 3-year average.
+  * the `if (i != 14) and (i != 15)` box skip in load_spectrum is removed
+    (contreras-m confirmed it was a leftover bug guard; no-op for the
+    Agulhas region boxes either way).
+
 Everything else -- iteration order, the 50-600 km log-log clipping, the
-hemisphere-dependent ratio (north: JFM/JAS, south: JAS/JFM), the GEOMAR
-per-year accumulation quirks (including the year-less JAS read inside the
-per-year loop), region-mean interpolation and the (i != 14, 15) skip in
-load_spectrum -- is kept EXACTLY as in the committed notebooks, so script
-output reproduces the notebook figures.
+hemisphere-dependent ratio (north: JFM/JAS, south: JAS/JFM), the
+load_spectrum per-year GEOMAR accumulation and the region-mean
+interpolation -- is kept EXACTLY as in the committed notebooks.
 """
 
 from __future__ import annotations
@@ -146,33 +156,34 @@ def plot_boxspectrum(fig, region_boxes, models, modellabel, cds, selected,
                 elif box in south_boxes:
                     Ra.append(spectrumJAS0[poswl[0]] / spectrumJFM0[poswl[0]])
             elif imod == "GEOMAR":
-                kyr = 0
+                # GEOMAR: explicit 3-year average (contreras-m decision,
+                # 2026-11-25) -- previously season 2 read an undocumented
+                # year-less file (cache stand-ins were 3-yr means) while
+                # season 1 used only the last (2023) spectrum in the ratio.
+                # See module docstring.
+                freqJFM0 = None
+                specs_JFM, specs_JAS = [], []
                 for yr in range(2021, 2024):
                     data = read(imod, box, season1, year=yr)
                     freqJFM0 = np.array(data["Frequency"])
                     spectrumJFM0 = np.array(data["Spectra"])
                     wavelength = 1 / np.array(freqJFM0)
                     poswl = np.where((wavelength > wlmin) & (wavelength < wlmax))
-                    # NOTE (faithful port): season 2 reads the YEAR-LESS file
-                    # inside the per-year loop, exactly like the notebook
-                    # (stand-ins are the disclosed 3-yr means -- see the
-                    # cache provenance note).
-                    data = read(imod, box, season2)
+                    data = read(imod, box, season2, year=yr)
                     freqJAS0 = np.array(data["Frequency"])
                     poswl = np.where((wavelength > wlmin) & (wavelength < wlmax))
                     spectrumJAS0 = np.array(data["Spectra"])
-                    if yr == 2021:
-                        spectrumJFM1 = np.zeros((len(spectrumJFM0)))
-                        spectrumJAS1 = np.zeros((len(spectrumJAS0)))
-                    spectrumJFM1 = spectrumJFM1 + spectrumJFM0
-                    spectrumJAS1 = spectrumJAS1 + spectrumJAS0
-                    kyr = kyr + 1
+                    specs_JFM.append(spectrumJFM0)
+                    specs_JAS.append(spectrumJAS0)
+                kyr = len(specs_JFM)
                 freqJFM.append(freqJFM0[poswl[0]])
                 freqJAS.append(freqJAS0[poswl[0]])
+                spectrumJFMs = np.mean(specs_JFM, axis=0)
+                spectrumJASs = np.mean(specs_JAS, axis=0)
                 if box in north_boxes:
-                    Ra.append((spectrumJFM0[poswl[0]] / kyr) / (spectrumJAS0[poswl[0]] / kyr))
+                    Ra.append(spectrumJFMs[poswl[0]] / spectrumJASs[poswl[0]])
                 elif box in south_boxes:
-                    Ra.append((spectrumJAS0[poswl[0]] / kyr) / (spectrumJFM0[poswl[0]] / kyr))
+                    Ra.append(spectrumJASs[poswl[0]] / spectrumJFMs[poswl[0]])
 
         if ibox == box_legend:
             pp2X.plot_psd(inset_ax, np.squeeze(np.array(freqJAS)).T, psds=Ra, unit="m2",
@@ -215,55 +226,53 @@ def load_spectrum(read, region_boxes, models, season1, season2, Wl):
     for imod in models:
         ki = 0
         for i in (region_boxes):
-
-            if (i != 14) and (i != 15):
-                season = season1
-                spectrumJFM = []
-                freqJFM = []
-                # Plot spectrum JFM
-                if imod != "GEOMAR":
-                    data = read(imod, i, season)
+            season = season1
+            spectrumJFM = []
+            freqJFM = []
+            # Plot spectrum JFM
+            if imod != "GEOMAR":
+                data = read(imod, i, season)
+                spectrumJFM.append(data["Spectra"])
+                freqJFM.append(data["Frequency"])
+                FbW[:, km] = FbW[:, km] + np.interp(1 / Wl, np.array(data["Frequency"]),
+                                                    np.array(data["Spectra"]))
+            elif imod == "GEOMAR":
+                kyr = 0
+                for yr in range(2021, 2024):
+                    spectrumJFM = []
+                    freqJFM = []
+                    data = read(imod, i, season, year=yr)
                     spectrumJFM.append(data["Spectra"])
                     freqJFM.append(data["Frequency"])
-                    FbW[:, km] = FbW[:, km] + np.interp(1 / Wl, np.array(data["Frequency"]),
-                                                        np.array(data["Spectra"]))
-                elif imod == "GEOMAR":
-                    kyr = 0
-                    for yr in range(2021, 2024):
-                        spectrumJFM = []
-                        freqJFM = []
-                        data = read(imod, i, season, year=yr)
-                        spectrumJFM.append(data["Spectra"])
-                        freqJFM.append(data["Frequency"])
-                        aFbW[kyr, :] = aFbW[kyr, :] + np.interp(1 / Wl, np.array(data["Frequency"]),
-                                                                np.array(data["Spectra"]))
-                        kyr = kyr + 1
-                    FbW[:, km] = np.nanmean(aFbW, axis=0)
-                    FbWy = np.nanstd(aFbW, axis=0)
+                    aFbW[kyr, :] = aFbW[kyr, :] + np.interp(1 / Wl, np.array(data["Frequency"]),
+                                                            np.array(data["Spectra"]))
+                    kyr = kyr + 1
+                FbW[:, km] = np.nanmean(aFbW, axis=0)
+                FbWy = np.nanstd(aFbW, axis=0)
 
-                season = season2
-                spectrumJAS = []
-                freqJAS = []
-                # Plot spectrum JAS
-                if imod != "GEOMAR":
-                    data = read(imod, i, season)
+            season = season2
+            spectrumJAS = []
+            freqJAS = []
+            # Plot spectrum JAS
+            if imod != "GEOMAR":
+                data = read(imod, i, season)
+                spectrumJAS.append(data["Spectra"])
+                freqJAS.append(data["Frequency"])
+                FbS[:, km] = FbS[:, km] + np.interp(1 / Wl, np.array(data["Frequency"]),
+                                                    np.array(data["Spectra"]))
+            elif imod == "GEOMAR":
+                kyr = 0
+                for yr in range(2021, 2024):
+                    spectrumJAS = []
+                    freqJAS = []
+                    data = read(imod, i, season, year=yr)
                     spectrumJAS.append(data["Spectra"])
                     freqJAS.append(data["Frequency"])
-                    FbS[:, km] = FbS[:, km] + np.interp(1 / Wl, np.array(data["Frequency"]),
-                                                        np.array(data["Spectra"]))
-                elif imod == "GEOMAR":
-                    kyr = 0
-                    for yr in range(2021, 2024):
-                        spectrumJAS = []
-                        freqJAS = []
-                        data = read(imod, i, season, year=yr)
-                        spectrumJAS.append(data["Spectra"])
-                        freqJAS.append(data["Frequency"])
-                        aFbS[kyr, :] = aFbS[kyr, :] + np.interp(1 / Wl, np.array(data["Frequency"]),
-                                                                np.array(data["Spectra"]))
-                        kyr = kyr + 1
-                    FbS[:, km] = np.nanmean(aFbS, axis=0)
-                ki = ki + 1
+                    aFbS[kyr, :] = aFbS[kyr, :] + np.interp(1 / Wl, np.array(data["Frequency"]),
+                                                            np.array(data["Spectra"]))
+                    kyr = kyr + 1
+                FbS[:, km] = np.nanmean(aFbS, axis=0)
+            ki = ki + 1
         km = km + 1
 
     FbS = FbS / len(region_boxes)
@@ -348,29 +357,34 @@ def plot_boxspectrum_gs(fig, region_boxes, models, modellabel, cds, selected,
                 elif box in south_boxes:
                     Ra.append(spectrumJAS0[poswl[0]] / spectrumJFM0[poswl[0]])
             elif imod == "GEOMAR":
-                kyr = 0
+                # GEOMAR: explicit 3-year average (contreras-m decision,
+                # 2026-11-25) -- previously season 2 read an undocumented
+                # year-less file (cache stand-ins were 3-yr means) while
+                # season 1 used only the last (2023) spectrum in the ratio.
+                # See module docstring.
+                freqJFM0 = None
+                specs_JFM, specs_JAS = [], []
                 for yr in range(2021, 2024):
                     data = read(imod, box, season1, year=yr)
                     freqJFM0 = np.array(data["Frequency"])
                     spectrumJFM0 = np.array(data["Spectra"])
                     wavelength = 1 / np.array(freqJFM0)
                     poswl = np.where((wavelength > wlmin) & (wavelength < wlmax))
-                    data = read(imod, box, season2)
+                    data = read(imod, box, season2, year=yr)
                     freqJAS0 = np.array(data["Frequency"])
                     poswl = np.where((wavelength > wlmin) & (wavelength < wlmax))
                     spectrumJAS0 = np.array(data["Spectra"])
-                    if yr == 2021:
-                        spectrumJFM1 = np.zeros((len(spectrumJFM0)))
-                        spectrumJAS1 = np.zeros((len(spectrumJAS0)))
-                    spectrumJFM1 = spectrumJFM1 + spectrumJFM0
-                    spectrumJAS1 = spectrumJAS1 + spectrumJAS0
-                    kyr = kyr + 1
+                    specs_JFM.append(spectrumJFM0)
+                    specs_JAS.append(spectrumJAS0)
+                kyr = len(specs_JFM)
                 freqJFM.append(freqJFM0[poswl[0]])
                 freqJAS.append(freqJAS0[poswl[0]])
+                spectrumJFMs = np.mean(specs_JFM, axis=0)
+                spectrumJASs = np.mean(specs_JAS, axis=0)
                 if box in north_boxes:
-                    Ra.append((spectrumJFM0[poswl[0]] / kyr) / (spectrumJAS0[poswl[0]] / kyr))
+                    Ra.append(spectrumJFMs[poswl[0]] / spectrumJASs[poswl[0]])
                 elif box in south_boxes:
-                    Ra.append((spectrumJAS0[poswl[0]] / kyr) / (spectrumJFM0[poswl[0]] / kyr))
+                    Ra.append(spectrumJASs[poswl[0]] / spectrumJFMs[poswl[0]])
 
         if ibox == box_legend:
             pp2X.plot_psd(inset_ax, np.squeeze(np.array(freqJAS)).T, psds=Ra, unit="m2",
