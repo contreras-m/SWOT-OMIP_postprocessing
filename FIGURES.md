@@ -39,7 +39,7 @@ from the paper repo in the 2026-11-24 tidy): `slope_season_model_winter_50-150`
 
 ```bash
 # 1. one-time: materialize the offline cache (~50 MB, idempotent)
-python3 bin/prepare_figure_cache.py --regions agulhas,natl,global
+.venv/bin/python3 bin/prepare_figure_cache.py --regions agulhas,natl,global
 
 # 2. produce a figure (offline cache; --online reads DIVE anonymously)
 .venv/bin/python3 scripts/figures/fig1_agulhas.py
@@ -66,41 +66,50 @@ so even a faithful reproduction lands in the "drifts" band. The contact
 sheets (1500 px, `pdftoppm -r 200`) are the acceptance artifact.
 
 Script-output scores vs the committed references
-(`figure_runs/scriptmatrix-20261125/`, plus the 2026-11-24 matrix for the
-unchanged figures): Fig1 0.821, Fig2 0.965 ("similar"), Fig3 0.852, Fig4
-0.872, S1 0.847, S3 0.875, **S4 0.829**, S5 0.844, S6 0.826, S7 0.806,
-S8 0.711, S9 0.838, S10 0.726 — every script matches or exceeds
-what the committed notebooks' own renders score against the same references,
-which is the fidelity check that matters pre-approval. (S2's script score is
-meaningless pending the merged Fig2+S2 redesign — the committed reference
-came from the wrong notebook.)
+(`figure_runs/scriptmatrix-20261125-fixes/`, post the 2026-11-25 fixes --
+explicit GEOMAR 3-yr means + latindex unskip): Fig1 0.821, Fig2 0.968
+("similar"), Fig3 0.852, Fig4 0.872, S1 0.847, S3 0.879, **S4 0.829**,
+S5 0.844, S6 0.826, S7 0.806, S8 0.711, S9 0.838, S10 0.726 — every script
+matches or exceeds what the committed notebooks' own renders score against
+the same references, which is the fidelity check that matters pre-approval.
+Notably the latindex fix *improved* Fig2 (0.965->0.968) and S3 (0.875->0.879):
+the committed figures were evidently generated with the skip already fixed,
+which matches contreras-m's recollection ("I thought I had fixed it") --
+the fix just never made it back into the committed notebook cells.
+(S2's script score is meaningless pending the merged Fig2+S2 redesign --
+the committed reference came from the wrong notebook.)
 
-## NOTES — quirks kept faithfully (paper-impacting questions for contreras-m)
+## NOTES — quirks resolved / kept (paper-impacting items for contreras-m)
 
 - **S2 layout — RESOLVED (contreras-m, 2026-11-25)**: the committed SI file
   (map + colorbar + a single 2x5 scatter block) was produced from the wrong
   notebook; its layout is an accident, not a design. The figure will be
-  redesigned as a merged Fig2+S2 (Takaya's suggestion); the
+  redesigned as a merged Fig2+S2 (Takaya's suggestion; contreras-m proposes
+  appending the S2 scatterplots to the bottom of Fig 2); the
   caption-literal combined script (`s2_cumspectrum_winter_summer.py`) is a
   stopgap to retire once the merged producer lands.
 - **S4 caption**: the committed caption says "(a-e)"; the producer
   (`plot_cumratio_map.ipynb`, contreras-m upload 9886daf, ported to
   `s4_cumratio_map.py`) makes 6 panels, (a) SWOT -> (f) NOC025 — the SI
   caption needs a touch during the sync round.
+- **GEOMAR year-less reads — RESOLVED (contreras-m, 2026-11-25)**: the
+  intended design is the **3-year average**; the scripts now read per-year
+  files and average explicitly (season 2 numerically unchanged -- the
+  cache stand-ins were 3-yr means; season 1 in the map insets moves from
+  the last-year-only quirk to the 3-yr mean, matching the paper text).
+  The year-less stand-ins remain in the cache only so the still-unpatched
+  notebooks keep running; they become removable once contreras-m's notebook
+  fix lands (`figure_cache/GLOBALv2/GEOMAR/_yearless_provenance.md`).
+- **latindex 14/15 skip — FIXED in the scripts (contreras-m confirmed the
+  bug, 2026-11-25)**: the guard is removed from the ported helpers (and the
+  no-op guard from load_spectrum); notebook patches follow on her schedule.
+  The fix *improved* Fig2/S3 scores vs the committed figures (see above).
+- **S8/S9 colorbars say "winter"** on summer figures (notebook verbatim) —
+  contreras-m offered to correct; awaiting her fix (scripts or notebooks).
 - **`ratio_model` season bug (Fig3/S5)**: the SWOT reference branch ignores
   its `season` argument, so the "summer" ratio divides model-summer by
   SWOT-winter per hemisphere. Kept faithfully (the committed figures carry
   it); contreras-m may fix (scripts or notebooks — re-port is small).
-- **latindex offset (fig2/S3-family cells)**: the box-mapping loop skips
-  geojson features 14/15, so scatter-color indices lag the 282-box list by
-  two from feature 14 on. Preserved; the committed figures carry it.
-- **S8/S9 colorbars say "winter"** on summer figures (notebook verbatim).
-- **GEOMAR year-less reads** (fig1/S1, map insets): the notebook reads
-  `GLOBALv2/GEOMAR/Global_box_{b}_{season}_GEOMAR.json` (no year). Those
-  files were never committed anywhere; the cache carries **disclosed 3-year
-  -mean stand-ins**
-  (`figure_cache/GLOBALv2/GEOMAR/_yearless_provenance.md`). True origin:
-  ask contreras-m.
 - **`plot_psd(savefig=True)` in the region notebooks is
   layout-carrying** — the mid-loop `globa_JFM.png` re-save settles the
   cartopy map state; removing it displaces every inset after the first

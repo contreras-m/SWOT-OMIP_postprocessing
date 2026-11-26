@@ -34,6 +34,7 @@ FIGURE_LABEL = {
     "S1": "Figures_SI/agulhas_spectrum_geomarperyear.png",
     "S2": "Figures_SI/scatter_global_cumspectrum_modelSWOT2_winter-summer_150-350.png",
     "S3": "Figures_SI/scatter_global_cumration_modelSWOT2_V2_tidesv2_150-350.png",
+    "S4": "Figures_SI/cumspectrumratio_model_50-150.png",
     "S5": "Figures_SI/meanlatratio_modelsswot_summer_v2.pdf",
     "S6": "Figures_SI/ratioslope_season_model_50-150.pdf",
     "S7": "Figures_SI/std_slope_season_model_winter_50-150.pdf",
@@ -46,7 +47,7 @@ SCRIPT_OF = {
     "Fig1": "fig1_agulhas.py", "Fig2": "fig2_cumsd_ratio_scatter.py",
     "Fig3": "fig3_meanlat_winter.py", "Fig4": "fig4_winterslope_zonal.py",
     "S1": "s1_agulhas_geomar_peryear.py", "S2": "s2_cumspectrum_winter_summer.py",
-    "S3": "s3_cumsd_ratio_tides.py", "S5": "s5_meanlat_summer.py",
+    "S3": "s3_cumsd_ratio_tides.py", "S4": "s4_cumratio_map.py", "S5": "s5_meanlat_summer.py",
     "S6": "s6_ratioslope.py", "S7": "s7_std_slope_winter.py",
     "S8": "s8_slope_summer.py", "S9": "s9_std_slope_summer.py",
     "S10": "s10_natl_detided.py",
@@ -65,7 +66,7 @@ def main() -> int:
     synced = []
     for label in args.labels:
         if label not in FIGURE_LABEL:
-            print(f"ERROR: unknown label {label!r} (S4 is pending origin — ask contreras-m)")
+            print(f"ERROR: unknown label {label!r}")
             return 1
         dest = args.paper_root / FIGURE_LABEL[label]
         src = FIGURES_OUT / dest.name
